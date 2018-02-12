@@ -1,0 +1,1 @@
+I know this is not exactly what it was supposed to be, but I did my best to get the actual game mechanics working and got stumped after that. 
