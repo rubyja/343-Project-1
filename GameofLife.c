@@ -1,43 +1,87 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <Windows.h>
-
-void startSim(int row, int column);
-char* createSim(int row, int column);
-double getRandD(double min, double max);
-void display(int row, int column, char* sim);
-int countNei(int row, int column, int x, int y, char* sim);
-char* step(int row, int column, char* pSim);
+#include "GameofLife.h"
 
 int main(int argc, char* argv[]){
+
+	if (argc != 4){
+		printf("Not enough parameters!\n");
+		printf("Usage: GameofLife numRows numColumns FILE\n");
+		printf("FILE is the file you want progress saved to and to load from.\n");
+		exit(1);
+	}
 
 	int row = atoi(argv[1]);
 	if (row <= 0){
 		printf("Row count must be greater than zero, row was %d\n", row);
-		return -1;
+		exit(1);
 	}
-
-	row+=2;
 
 	int column = atoi(argv[2]);
 	if (column <= 0){
 		printf("Column count must be greater than zero, column was %d\n", column);
-		return -1;
+		exit(1);
 	}
 
-	column+=2;
+	char* fileName= argv[3];
 
-	startSim(row, column);
+	printf("Would you like to load a file to continue a game?\n");
+	printf("If so, please make sure you enter the same rows and columns.\n");
+	printf("Y : yes 	N : no\n");
+	int A = getchar();
+	if (A == 'Y'){
+		char* sim = readFile(fileName, row, column);
+		//display(row, column, sim);
+		for(int i=0; i<row*column; i++)
+			printf("%c,", sim[i]);
+		exit(1);
+		int i = 0;
+		while (1){
+			printf("Would you like to continue or save?\n");
+			printf("Enter : continue 	S: save\n");
+			int B = getchar();
+			if(B == 'S'){
+				writeFile(fileName, sim, row, column);
+				exit(1);
+			}
+			else{
+				char* newSim = step(row, column, sim);
+				free(sim);
+				sim = newSim;
+				display(row, column, sim);
+			}
+		}
+	}
+	else{
+		char* sim = createSim(row, column);
+		display(row, column, sim);
+		int i = 0;
+		while (1){
+			printf("Would you like to continue or save?\n");
+			printf("Enter : continue 	S: save\n");
+			int B = getchar();
+			if(B == 'S'){
+				writeFile(fileName, sim, row, column);
+				exit(1);
+			}
+			else{
+				char* newSim = step(row, column, sim);
+				free(sim);
+				sim = newSim;
+				display(row, column, sim);
+			}
+		}
+	}
 }
 
 //Displays simulation
 void display(int row, int column, char* sim){
 
 	printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-	for (int y = 1; y < row - 1; y++){
+	for (int y = 0; y < row; y++){
 
-		for (int x = 1; x < column - 1; x++){
+		for (int x = 0; x < column; x++){
 			printf("%c", *(sim + y*column + x));
 		}
 		printf("\n");
@@ -69,9 +113,9 @@ char* step(int row, int column, char* pSim){
 		return NULL;
 	}
 
-	for (int y = 1; y < row - 1; y++){
+	for (int y = 0; y < row; y++){
 
-		for (int x = 1; x < column - 1; x++){
+		for (int x = 0; x < column; x++){
 			int A = countNei(row, column, x, y, pSim);
 			char cell = *(pSim + y*column + x);
 			if (cell == '#') A--;
@@ -95,29 +139,6 @@ char* step(int row, int column, char* pSim){
 	return stepSim;
 }
 
-//Starts the simulation
-void startSim(int row, int column){
-	puts("Starting...");
-	printf("Rows = %d \n", row);
-	printf("Columns = %d \n", column);
-
-	char* sim = createSim(row, column);
-	if (sim == NULL) return;
-	
-	display(row, column, sim);
-
-	//*******************************************************//
-	while(1){
-		char* newSim = step(row, column, sim);
-		if (newSim ==NULL) return;
-		
-		free(sim);
-		sim = newSim;
-		display(row, column, sim);
-		Sleep(500);
-	}
-}
-
 //Gets random double to randomize the live cells
 double getRandD(double min, double max){
 	
@@ -131,9 +152,9 @@ char* createSim(int row, int column){
 
 	if (sim == NULL) return NULL;
 	
-	for (int y = 1; y < row - 1; y++){
+	for (int y = 0; y < row; y++){
 		
-		for (int x = 1; x < column - 1; x++){
+		for (int x = 0; x < column; x++){
 			
 			if (getRandD(0.0, 1.0) <= 0.35){
 				*(sim + y * column + x) = '#';
@@ -146,4 +167,46 @@ char* createSim(int row, int column){
 	}
 
 	return sim;
+}
+//Reads file in order to load previous saved game
+char* readFile(char* filename, int row, int column){
+	FILE *file;
+	int num;
+	int i;
+	if ((file = fopen(filename, "r")) == NULL){
+		printf("ERROR! File could not be opened\n");
+		exit(1);
+	}
+
+	char* simLoad = (char*)malloc(row * column * sizeof(char));
+	fseek(file, 0L, SEEK_END);
+	int size = ftell(file);
+	rewind(file);
+
+	if (simLoad == NULL) return NULL;
+	
+	fread(simLoad, 1, size, file);
+
+	return simLoad;
+}
+//Writes to file to save game
+void writeFile(char* filename, char* sim, int row, int column){
+	FILE *file;
+	file = fopen(filename, "w");
+
+
+	if (file == NULL){
+		printf("ERROR! Could not open file.\n");
+		exit(1);
+	}
+
+	for (int y = 0; y < row; y++){
+
+		for (int x = 0; x < column; x++){
+			fprintf(file, "%c", *(sim + y*column + x));
+		}
+	}
+	fclose(file);
+
+	return;
 }

@@ -1,1 +1,1 @@
-I know this is not exactly what it was supposed to be, but I did my best to get the actual game mechanics working and got stumped after that. 
+I know this is not exactly what it was supposed to be, the loading still isn't working and I am hoping it will work for you, since while I was in your office you said it wouldn't work on Windows so I hope that is the problem
